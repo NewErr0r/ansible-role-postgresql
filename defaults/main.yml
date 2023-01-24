@@ -1,0 +1,5 @@
+---
+hostname_vm: '{{ inventory_hostname }}'
+
+# Permit networks for 'pg_hba.conf'
+permit_network: '0.0.0.0/0'

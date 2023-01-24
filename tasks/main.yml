@@ -1,0 +1,39 @@
+---
+- name: Set a hostname 
+  hostname:
+    name: '{{ hostname_vm }}'
+
+- name: Configure firewalld
+  firewalld: 
+    port: '5432/tcp'
+    permanent: true 
+    state: enabled
+  notify:
+    - Restarted firewalld
+
+- name: Install postgresql and packages for working
+  dnf: 
+    name: '{{ packeges_postrgesql }}'
+    state: latest
+
+- name: Check if PostgreSQL is instialized for CentOS
+  stat: 
+    path: "/var/lib/pgsql/data/pg_hba.conf"
+  register: postgres_data
+
+- name: Initialize PostgreSQL for CentOS
+  shell: "postgresql-setup initdb"
+  when: not postgres_data.stat.exists
+  notify:
+    - Restarted postgresql
+
+- name: Configure remote access to PostgreSQL "postgresql.conf"
+  lineinfile:
+    dest: "/var/lib/pgsql/data/postgresql.conf"
+    regexp: "^#listen_addresses = 'localhost'"
+    line: "listen_addresses = '*'"
+
+- name: Configure remote access to PostgreSQL "pg_hba.conf"
+  lineinfile:
+    dest: "/var/lib/pgsql/data/pg_hba.conf"
+    line: "host    all             all             {{ permit_network }}               md5"
